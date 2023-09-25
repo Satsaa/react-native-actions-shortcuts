@@ -55,6 +55,12 @@ interface ShortcutsType extends EventSubscriptionVendor {
    * Gets the initial shortcut the app was launched with
    */
   getInitialShortcut(): Promise<ShortcutItem | null>;
+
+  /**
+   * Attempts to pin the shortcut to the home screen.
+   * @returns a promise returning true if the operation succeeded
+   */
+  pinShortcut(item: ShortcutItem): Promise<unknown>;
 }
 
 const { RNShortcuts } = NativeModules;

@@ -125,6 +125,62 @@ class ShortcutsModule(reactContext: ReactApplicationContext) :
         shortcutManager?.removeAllDynamicShortcuts()
     }
 
+    @ReactMethod
+    @TargetApi(26)
+    fun pinShortcut(item: ReadableMap, promise: Promise) {
+        if (!isPinSupported()) {
+            promise.reject(NotSupportedException)
+        }
+
+        val shortcutManager = currentActivity?.getSystemService<ShortcutManager>(ShortcutManager::class.java)
+        if (shortcutManager?.isRequestPinShortcutSupported == true) {
+
+            val context = reactApplicationContext ?: return
+            val activity = currentActivity ?: return
+
+            val shortcutItem = ShortcutItem.fromReadableMap(item);
+
+            if (shortcutItem != null) {
+
+                val (type, title, shortTitle, iconName) = shortcutItem;
+
+                val intent = Intent(reactApplicationContext, activity::class.java)
+                intent.action = INTENT_ACTION_SHORTCUT
+                intent.putExtra("shortcutItem", shortcutItem.toBundle());
+
+                val builder = ShortcutInfo
+                    .Builder(reactApplicationContext, type)
+                    .setLongLabel(title)
+                    .setShortLabel(shortTitle)
+                    .setIntent(intent)
+
+                if(iconName != null) {
+                    val resourceId = context.resources.getIdentifier(iconName, "drawable", context.packageName)
+                    builder.setIcon(Icon.createWithResource(context, resourceId))
+                }
+
+                val shortcutInfo = builder.build()
+
+                shortcutManager.requestPinShortcut(shortcutInfo, null);
+
+                promise.resolve(shortcutItem?.toMap())
+            }
+        } else {
+            promise.reject(NotSupportedException);
+        }
+    }
+
+    // Required for rn built in EventEmitter Calls.
+    @ReactMethod
+    fun addListener(eventName: String) {
+
+    }
+
+    @ReactMethod
+    fun removeListeners(count: Integer) {
+
+    }
+    
     private fun getShortcutItemFromIntent(intent: Intent?): ShortcutItem? {
         if (intent?.action !== INTENT_ACTION_SHORTCUT) {
             return null
@@ -144,6 +200,10 @@ class ShortcutsModule(reactContext: ReactApplicationContext) :
 
     fun isSupported(): Boolean {
         return Build.VERSION.SDK_INT >= 25
+    }
+
+    fun isPinSupported(): Boolean {
+        return Build.VERSION.SDK_INT >= 26
     }
 }
 
